@@ -1,67 +1,61 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'dashboard_screen.dart';
-import 'login_screen.dart';
-import 'transition_route_observer.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:offline/authentication/screens/login.dart';
+import 'package:offline/authentication/services/auth_service.dart';
+import 'package:offline/job_orders/screens/job_order_details.dart';
+import 'package:offline/job_orders/screens/job_orders.dart';
 
-void main() {
-  SystemChrome.setSystemUIOverlayStyle(
-    SystemUiOverlayStyle(
-      systemNavigationBarColor:
-      SystemUiOverlayStyle.dark.systemNavigationBarColor,
-    ),
-  );
-  runApp(const MyApp());
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  runApp(ProviderScope(child: OfflineApp()));
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class OfflineApp extends ConsumerWidget {
+  OfflineApp({super.key});
 
+  // This widget is the root of your application.
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Offline with Login Demo',
-      theme: ThemeData(
-        textSelectionTheme:
-        const TextSelectionThemeData(cursorColor: Colors.orange),
-        // fontFamily: 'SourceSansPro',
-        textTheme: TextTheme(
-          displaySmall: const TextStyle(
-            fontFamily: 'OpenSans',
-            fontSize: 45.0,
-            fontWeight: FontWeight.w400,
-            color: Colors.green,
-          ),
-          labelLarge: const TextStyle(
-            // OpenSans is similar to NotoSans but the uppercases look a bit better IMO
-            fontFamily: 'OpenSans',
-          ),
-          bodySmall: TextStyle(
-            fontFamily: 'NotoSans',
-            fontSize: 12.0,
-            fontWeight: FontWeight.normal,
-            color: Colors.green,
-          ),
-          displayLarge: const TextStyle(fontFamily: 'Quicksand'),
-          displayMedium: const TextStyle(fontFamily: 'Quicksand'),
-          headlineMedium: const TextStyle(fontFamily: 'Quicksand'),
-          headlineSmall: const TextStyle(fontFamily: 'NotoSans'),
-          titleLarge: const TextStyle(fontFamily: 'NotoSans'),
-          titleMedium: const TextStyle(fontFamily: 'NotoSans'),
-          bodyLarge: const TextStyle(fontFamily: 'NotoSans'),
-          bodyMedium: const TextStyle(fontFamily: 'NotoSans'),
-          titleSmall: const TextStyle(fontFamily: 'NotoSans'),
-          labelSmall: const TextStyle(fontFamily: 'NotoSans'),
-        ),
-        colorScheme: ColorScheme.fromSwatch(primarySwatch: Colors.green)
-            .copyWith(secondary: Colors.green),
+  Widget build(BuildContext context, WidgetRef ref) {
+    final _auth = ref.watch(authServiceProvider);
+    return MaterialApp.router(
+      routerConfig: GoRouter(
+          routes: <GoRoute>[
+            GoRoute(
+              name: 'login',
+              builder: (context, state) => const LoginScreen(),
+              path: '/login',
+            ),
+            GoRoute(
+              name: 'jobOrders',
+              builder: (context, state) => const JobOrdersScreen(),
+              path: '/',
+            ),
+            GoRoute(
+                name: 'jobOrder',
+                path: '/jobOrder/:id',
+                builder: (BuildContext context, GoRouterState state) => JobOrderDetailsScreen(id: state.pathParameters['id'] as int)),
+          ],
+          debugLogDiagnostics: true,
+          refreshListenable: _auth,
+          redirect: (BuildContext context, GoRouterState state) {
+            final bool signedIn =  _auth.isLoggedIn;
+            final bool signingIn = state.matchedLocation == '/login';
+
+            debugPrint("signingIn $signingIn");
+            debugPrint("signedIn $signedIn");
+            if (!signedIn) {
+              return '/login';
+            }
+
+            return '/';
+          }
       ),
-      navigatorObservers: [TransitionRouteObserver()],
-      initialRoute: LoginScreen.routeName,
-      routes: {
-        LoginScreen.routeName: (context) => const LoginScreen(),
-        DashboardScreen.routeName: (context) => const DashboardScreen(),
-      },
     );
+
+
   }
+
 }
+
