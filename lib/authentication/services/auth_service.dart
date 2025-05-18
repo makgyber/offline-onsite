@@ -11,15 +11,24 @@ class AuthService extends ChangeNotifier {
   final ApiService apiService = ApiService();
 
   bool _isLoggedIn = false;
+
   bool get isLoggedIn => _isLoggedIn;
 
-  Future<void> _init() async {
+  Future<User> getAuthenticatedUser() async {
     final db = await $FloorOfflineDatabase
         .databaseBuilder('tbs_offline.db')
         .build();
     final users = await db.userDao.findAllUsers();
-    _isLoggedIn = users.isNotEmpty;
+    debugPrint(users.first.token.toString());
+    _isLoggedIn = (users.first.token.isNotEmpty);
     notifyListeners();
+    db.close();
+    return users.first;
+  }
+
+  Future<void> _init() async {
+    User user = await getAuthenticatedUser();
+    _isLoggedIn = (user.token.isNotEmpty);
   }
 
   Future<bool> logIn(String email, String password) async {
@@ -51,6 +60,7 @@ class AuthService extends ChangeNotifier {
   }
 
   Future<void> logOut() async {
+    debugPrint('logging out');
     final db = await $FloorOfflineDatabase
         .databaseBuilder('tbs_offline.db')
         .build();
@@ -61,8 +71,11 @@ class AuthService extends ChangeNotifier {
       await db.userDao.deleteUser(user);
     }
 
-    db.close();
+    _isLoggedIn = false;
+    notifyListeners();
   }
 }
 
 final authServiceProvider = Provider<AuthService>((ref) => AuthService());
+
+final authUserProvider = Provider<Future<User>>((ref) => ref.watch(authServiceProvider).getAuthenticatedUser());

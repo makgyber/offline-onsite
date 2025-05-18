@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:offline/authentication/services/auth_service.dart';
+import 'package:offline/job_orders/models/rest/job_order.dart';
+import 'package:offline/job_orders/services/job_order_api.dart';
 
 class JobOrdersScreen extends ConsumerStatefulWidget {
   const JobOrdersScreen({Key? key}) : super(key: key);
@@ -26,8 +30,9 @@ class _JobOrdersScreenState extends ConsumerState<JobOrdersScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // final jobOrders = ref.watch(allJobOrdersProvider);
-    // List<JobOrder> jos = [];
+    final jobOrders = ref.watch(allJobOrdersProvider);
+    final _auth = ref.watch(authServiceProvider);
+    List<JobOrder> jos = [];
     return Scaffold(
       appBar: AppBar(
         title: Text(visitDate != null
@@ -41,52 +46,65 @@ class _JobOrdersScreenState extends ConsumerState<JobOrdersScreen> {
               onPressed: _selectDate),
           IconButton(icon: Icon(Icons.exit_to_app),
               onPressed: () {
-                // UserAuthScope.of(context)
-                //     .signOut();
+                _auth.logOut();
               })
         ],
       ),
       body: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Container(),
-          //
-          // jobOrders.when(
-          //     data: (data) {
-          //       return RefreshIndicator(
-          //           child: ListView.builder(
-          //               itemCount: data!.length,
-          //               itemBuilder: (context, index) {
-          //                 return Container(
-          //                   padding: const EdgeInsets.all(10),
-          //                   decoration: BoxDecoration(
-          //                     color: Colors.green.shade50,
-          //                     border: Border.all(color: Colors.green.shade700),
-          //                     borderRadius: BorderRadius.circular(5),
-          //                   ),
-          //                   child: Column(
-          //                     crossAxisAlignment: CrossAxisAlignment.start,
-          //                     children: [
-          //                       // Text(data[index].client!.name.toString()),
-          //                       // Text(data[index].address!.street.toString()),
-          //                       Text(data[index].code),
-          //                       Text(data[index].status),
-          //                       // Text(data[index].job_order_type),
-          //                     ],
-          //                   ),
-          //                 );
-          //               }
-          //           ),
-          //           onRefresh: () async {
-          //             ref.refresh(allJobOrdersProvider);
-          //           }
-          //       );
-          //     },
-          //     loading: ()=> const CircularProgressIndicator(),
-          //     error: (e, trace) {
-          //       return Text(e.toString());
-          //     }
-          //
-          // )
+          padding: const EdgeInsets.all(10),
+          child: //Container(),
+
+          jobOrders.when(
+              data: (data) {
+                return RefreshIndicator(
+                    child: ListView.builder(
+                        itemCount: data!.length,
+                        itemBuilder: (context, index) {
+                          return Card(
+                            // padding: const EdgeInsets.all(8.0),
+                            color: Colors.green.shade50,
+                            shadowColor: Colors.green.shade600,
+                            elevation: 2,
+                            margin: const EdgeInsets.all(4.0),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                ListTile(
+                                  leading: Icon(Icons.adb),
+                                  title: Text(data[index].clientName),
+                                  subtitle: Text(data[index].shortAddress??"no address provided"),
+                                  trailing: Column(
+                                    children: [
+                                      Text(data[index].code),
+                                      Text(data[index].status),
+                                      Text(data[index].site??"no site provided"),
+                                    ]
+                                  ),
+                                  onTap: () {
+                                    debugPrint('Card tapped. {$index}');
+                                    String jobId = data[index].id.toString();
+                                    context.push("/jobOrder/$jobId");
+                                  },
+                                ),
+
+                                // Text(data[index].job_order_type),
+                              ],
+                            ),
+                          );
+                        }
+                    ),
+                    onRefresh: () async {
+                      ref.refresh(jobOrderApiProvider);
+                    }
+                );
+              },
+              loading: ()=> const CircularProgressIndicator(),
+              error: (e, trace) {
+                return Text(e.toString());
+              }
+
+          )
 
       ),
 

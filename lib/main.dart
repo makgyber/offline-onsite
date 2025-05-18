@@ -23,11 +23,6 @@ class OfflineApp extends ConsumerWidget {
       routerConfig: GoRouter(
           routes: <GoRoute>[
             GoRoute(
-              name: 'login',
-              builder: (context, state) => const LoginScreen(),
-              path: '/login',
-            ),
-            GoRoute(
               name: 'jobOrders',
               builder: (context, state) => const JobOrdersScreen(),
               path: '/',
@@ -35,11 +30,20 @@ class OfflineApp extends ConsumerWidget {
             GoRoute(
                 name: 'jobOrder',
                 path: '/jobOrder/:id',
-                builder: (BuildContext context, GoRouterState state) => JobOrderDetailsScreen(id: state.pathParameters['id'] as int)),
+                builder: (BuildContext context, GoRouterState state) => JobOrderDetailsScreen(id: state.pathParameters['id'])
+            ),
+            GoRoute(
+              name: 'login',
+              builder: (context, state) => const LoginScreen(),
+              path: '/login',
+            ),
+
+
           ],
           debugLogDiagnostics: true,
           refreshListenable: _auth,
           redirect: (BuildContext context, GoRouterState state) {
+            ref.watch(authUserProvider);
             final bool signedIn =  _auth.isLoggedIn;
             final bool signingIn = state.matchedLocation == '/login';
 
@@ -47,6 +51,10 @@ class OfflineApp extends ConsumerWidget {
             debugPrint("signedIn $signedIn");
             if (!signedIn) {
               return '/login';
+            }
+
+            if(signedIn && !signingIn) {
+              return null;
             }
 
             return '/';
