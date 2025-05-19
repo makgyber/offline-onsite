@@ -19,7 +19,7 @@ abstract class ArrivalDao {
   Stream<List<Arrival>> findAllArrivalsByStatusAsStream(String status);
 
   @Query('SELECT * FROM arrivals WHERE jobOrderId = :jobOrderId')
-  Stream<List<Arrival>> findAllArrivalsByJobOrderId(String jobOrderId);
+  Future<List<Arrival>> findAllArrivalsByJobOrderId(int jobOrderId);
 
   @Query('UPDATE OR ABORT arrivals SET type = :type WHERE id = :id')
   Future<int?> updateTypeById(String type, int id);

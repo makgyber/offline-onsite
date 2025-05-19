@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:offline/authentication/models/local/user.dart';
 import 'package:offline/authentication/models/rest/api_user.dart';
 import 'package:offline/authentication/services/api_service.dart';
+import 'package:offline/config/constants.dart';
 import 'package:offline/db/database.dart';
 
 
@@ -16,7 +17,7 @@ class AuthService extends ChangeNotifier {
 
   Future<User> getAuthenticatedUser() async {
     final db = await $FloorOfflineDatabase
-        .databaseBuilder('tbs_offline.db')
+        .databaseBuilder(Constants.databaseName)
         .build();
     final users = await db.userDao.findAllUsers();
     debugPrint(users.first.token.toString());
@@ -33,7 +34,7 @@ class AuthService extends ChangeNotifier {
 
   Future<bool> logIn(String email, String password) async {
     final db = await $FloorOfflineDatabase
-        .databaseBuilder('tbs_offline.db')
+        .databaseBuilder(Constants.databaseName)
         .build();
 
     String? token = await apiService.getToken(email, password);

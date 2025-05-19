@@ -2,6 +2,7 @@ import 'package:floor/floor.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:offline/config/constants.dart';
 import 'dart:convert';
 import 'package:offline/db/database.dart';
 import 'package:offline/job_orders/models/rest/arrival.dart';
@@ -9,13 +10,12 @@ import 'package:offline/job_orders/models/rest/job_order.dart';
 
 class JobOrderApi {
 
-
-  Stream<List<JobOrder>> getJobOrdersAsStream() async* {
+  Stream<List<JobOrder>> getJobOrdersAsStream(String visitDate) async* {
     final db = await $FloorOfflineDatabase
-        .databaseBuilder('tbs_offline.db')
+        .databaseBuilder(Constants.databaseName)
         .build();
 
-    final List<JobOrder>? jobOrders = await db.jobOrderDao.findAllJobOrders();
+    final List<JobOrder>? jobOrders = await db.jobOrderDao.findAllJobOrdersByTargetDate(visitDate);
 
     debugPrint('trying local');
     // Returns the database result if it exists
@@ -28,7 +28,7 @@ class JobOrderApi {
     // Fetch the job orders from the API
     try {
       debugPrint('trying from remote');
-      final jobOrders = await fetchJobOrders(db);
+      final jobOrders = await fetchJobOrders(db, visitDate);
 
       if (jobOrders != null) {
         debugPrint('from remote');
@@ -43,23 +43,26 @@ class JobOrderApi {
   }
 
 
-  Future<List<JobOrder>?> fetchJobOrders(OfflineDatabase db) async {
-    String url = "https://topbestsystems.com/api/user-schedule";
+  Future<List<JobOrder>?> fetchJobOrders(OfflineDatabase db, String visitDate) async {
+    String url = Constants.jobOrderUrl;
     String token = await db.userDao.findAllUsers().then((_user)=>_user.first.token);
-
-    final Response response = await get(Uri.parse(url), headers: {
-      "Authorization": "Bearer $token"
-    }
+    url = '$url?visit_date=$visitDate';
+    final Response response = await get(Uri.parse(url),
+      headers: {
+        "Authorization": "Bearer $token"
+        }
     );
-
+    print(url);
     try {
       if (response.statusCode == 200 || response.statusCode == 400) {
 
         final result = jsonDecode(response.body);
 
+        print(result);
         List<JobOrder> jos = [];
         for(final jo in result) {
           final tmp = JobOrder.fromJson(jo);
+          print(tmp.toString());
           db.jobOrderDao.insertJobOrder(tmp);
           for (final arrival in jo['arrivals']) {
             debugPrint(arrival.toString());
@@ -74,6 +77,7 @@ class JobOrderApi {
       }
     }catch(e) {
       debugPrint("Error");
+      print(e.toString());
       return null;
     }
     return null;
@@ -82,7 +86,7 @@ class JobOrderApi {
 
   Future<JobOrder?> fetchJobOrderById(int id) async {
     final db = await $FloorOfflineDatabase
-        .databaseBuilder('tbs_offline.db')
+        .databaseBuilder(Constants.databaseName)
         .build();
 
     final jo = await db.jobOrderDao.findJobOrderById(id);
@@ -95,15 +99,16 @@ class JobOrderApi {
 
 final jobOrderApiProvider = Provider<JobOrderApi>((ref) => JobOrderApi());
 
-final allJobOrdersProvider = StreamProvider<List<JobOrder>?>((ref) {
-  final joProvider = ref.read(jobOrderApiProvider);
-  return joProvider.getJobOrdersAsStream();
+final allJobOrdersProvider = StreamProvider.autoDispose.family<List<JobOrder>?, String>((ref, arguments) {
+  final joProvider = ref.watch(jobOrderApiProvider);
+  return joProvider.getJobOrdersAsStream(arguments);
 });
 
+
+
+
+
 final jobOrderDetailProvider = FutureProvider.autoDispose
-// We use the ".family" modifier.
-// The "String" generic type corresponds to the argument type.
-// Our provider now receives an extra argument on top of "ref": the activity type.
     .family<JobOrder?, int>((ref, arguments) async {
   final joProvider = ref.watch(jobOrderApiProvider);
   var jo = await joProvider.fetchJobOrderById(arguments);

@@ -5,11 +5,13 @@ import 'package:offline/authentication/models/rest/api_user.dart';
 import 'package:offline/authentication/models/rest/token.dart';
 import 'dart:convert';
 
+import 'package:offline/config/constants.dart';
+
 
 class ApiService {
 
   Future<String?> getToken(String email, String password) async {
-    String url = "https://topbestsystems.com/api/sanctum/token";
+    String url = Constants.tokenUrl;
     debugPrint(url);
     try {
       final Response response = await post(Uri.parse(url), body: {
@@ -31,7 +33,7 @@ class ApiService {
   }
 
   Future<ApiUser?> getUser(String token) async {
-    String url = "https://topbestsystems.com/api/user";
+    String url = Constants.userUrl;
     try {
       final Response response = await get(Uri.parse(url), headers: {
         'Authorization': 'Bearer $token',

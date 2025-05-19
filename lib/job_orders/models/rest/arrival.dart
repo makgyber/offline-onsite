@@ -11,11 +11,10 @@ part 'arrival.g.dart';
     parentColumns: ['id'],
     entity: JobOrder,
   )
-],)
+])
 class Arrival {
-  @PrimaryKey()
-  int? localId;
   @JsonKey(name: "id")
+  @PrimaryKey()
   int? id;
   @JsonKey(name: "job_order_id")
   int? jobOrderId;
@@ -30,7 +29,6 @@ class Arrival {
   DateTime updatedAt = DateTime.now();
 
   Arrival(
-    this.localId,
     this.id,
     this.jobOrderId,
     this.arrival,

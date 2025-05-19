@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:offline/authentication/services/auth_service.dart';
 import 'package:offline/job_orders/models/rest/job_order.dart';
 import 'package:offline/job_orders/services/job_order_api.dart';
+import 'package:intl/intl.dart';
 
 class JobOrdersScreen extends ConsumerStatefulWidget {
   const JobOrdersScreen({Key? key}) : super(key: key);
@@ -24,15 +25,17 @@ class _JobOrdersScreenState extends ConsumerState<JobOrdersScreen> {
     );
 
     setState(() {
-      visitDate = pickedDate;
+      if (pickedDate != null) {
+        visitDate = pickedDate;
+      }
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final jobOrders = ref.watch(allJobOrdersProvider);
+    final jobOrders = ref.watch(allJobOrdersProvider(DateFormat.yMd().format(visitDate!)));
     final _auth = ref.watch(authServiceProvider);
-    List<JobOrder> jos = [];
+
     return Scaffold(
       appBar: AppBar(
         title: Text(visitDate != null
