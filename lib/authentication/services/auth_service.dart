@@ -11,6 +11,10 @@ import 'package:offline/db/database.dart';
 class AuthService extends ChangeNotifier {
   final ApiService apiService = ApiService();
 
+  AuthService() {
+    _init();
+  }
+
   bool _isLoggedIn = false;
 
   bool get isLoggedIn => _isLoggedIn;

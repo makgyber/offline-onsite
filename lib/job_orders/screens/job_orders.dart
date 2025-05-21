@@ -6,6 +6,7 @@ import 'package:offline/authentication/services/auth_service.dart';
 import 'package:offline/job_orders/models/rest/job_order.dart';
 import 'package:offline/job_orders/services/job_order_api.dart';
 import 'package:intl/intl.dart';
+import 'package:loading_animation_widget/loading_animation_widget.dart';
 
 class JobOrdersScreen extends ConsumerStatefulWidget {
   const JobOrdersScreen({Key? key}) : super(key: key);
@@ -102,7 +103,11 @@ class _JobOrdersScreenState extends ConsumerState<JobOrdersScreen> {
                     }
                 );
               },
-              loading: ()=> const CircularProgressIndicator(),
+              loading: ()=> Center(child:LoadingAnimationWidget.twistingDots(
+                leftDotColor: const Color(0xFF1A1A3F),
+                rightDotColor: const Color(0xFFEA3799),
+                size: 100,
+              ),),
               error: (e, trace) {
                 return Text(e.toString());
               }
