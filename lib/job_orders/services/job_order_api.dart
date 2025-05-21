@@ -1,3 +1,5 @@
+import 'dart:isolate';
+
 import 'package:floor/floor.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart';
@@ -5,15 +7,14 @@ import 'package:flutter/cupertino.dart';
 import 'package:offline/config/constants.dart';
 import 'dart:convert';
 import 'package:offline/db/database.dart';
+import 'package:offline/db/database_helper.dart';
 import 'package:offline/job_orders/models/rest/arrival.dart';
 import 'package:offline/job_orders/models/rest/job_order.dart';
 
 class JobOrderApi {
 
   Stream<List<JobOrder>> getJobOrdersAsStream(String visitDate) async* {
-    final db = await $FloorOfflineDatabase
-        .databaseBuilder(Constants.databaseName)
-        .build();
+    final db = DatabaseHelper.instance.database;
 
     final List<JobOrder>? jobOrders = await db.jobOrderDao.findAllJobOrdersByTargetDate(visitDate);
 
@@ -52,28 +53,11 @@ class JobOrderApi {
         "Authorization": "Bearer $token"
         }
     );
-    print(url);
+
     try {
       if (response.statusCode == 200 || response.statusCode == 400) {
-
         final result = jsonDecode(response.body);
-
-        print(result);
-        List<JobOrder> jos = [];
-        for(final jo in result) {
-          final tmp = JobOrder.fromJson(jo);
-          print(tmp.toString());
-          db.jobOrderDao.insertJobOrder(tmp);
-          for (final arrival in jo['arrivals']) {
-            debugPrint(arrival.toString());
-            var tArr = Arrival.fromJson(arrival);
-            var aid = db.arrivalDao.insertArrival(tArr);
-            debugPrint(aid.toString());
-          }
-          jos.add(tmp);
-        }
-
-        return jos;
+        return Isolate.run(()=>processResponse(result, db));
       }
     }catch(e) {
       debugPrint("Error");
@@ -81,6 +65,22 @@ class JobOrderApi {
       return null;
     }
     return null;
+  }
+
+  List<JobOrder> processResponse(result, OfflineDatabase db) {
+    List<JobOrder> jos = [];
+    for(final jo in result) {
+      final tmp = JobOrder.fromJson(jo);
+      db.jobOrderDao.insertJobOrder(tmp);
+      for (final arrival in jo['arrivals']) {
+        debugPrint(arrival.toString());
+        var tArr = Arrival.fromJson(arrival);
+        var aid = db.arrivalDao.insertArrival(tArr);
+      }
+      jos.add(tmp);
+    }
+
+    return jos;
   }
 
 

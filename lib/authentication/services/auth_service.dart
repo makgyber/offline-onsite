@@ -6,6 +6,7 @@ import 'package:offline/authentication/models/rest/api_user.dart';
 import 'package:offline/authentication/services/api_service.dart';
 import 'package:offline/config/constants.dart';
 import 'package:offline/db/database.dart';
+import 'package:offline/db/database_helper.dart';
 
 
 class AuthService extends ChangeNotifier {
@@ -20,14 +21,11 @@ class AuthService extends ChangeNotifier {
   bool get isLoggedIn => _isLoggedIn;
 
   Future<User> getAuthenticatedUser() async {
-    final db = await $FloorOfflineDatabase
-        .databaseBuilder(Constants.databaseName)
-        .build();
+    final db = DatabaseHelper.instance.database;
     final users = await db.userDao.findAllUsers();
     debugPrint(users.first.token.toString());
     _isLoggedIn = (users.first.token.isNotEmpty);
     notifyListeners();
-    db.close();
     return users.first;
   }
 
@@ -37,9 +35,7 @@ class AuthService extends ChangeNotifier {
   }
 
   Future<bool> logIn(String email, String password) async {
-    final db = await $FloorOfflineDatabase
-        .databaseBuilder(Constants.databaseName)
-        .build();
+    final db = DatabaseHelper.instance.database;
 
     String? token = await apiService.getToken(email, password);
 
@@ -66,9 +62,7 @@ class AuthService extends ChangeNotifier {
 
   Future<void> logOut() async {
     debugPrint('logging out');
-    final db = await $FloorOfflineDatabase
-        .databaseBuilder('tbs_offline.db')
-        .build();
+    final db = DatabaseHelper.instance.database;
 
     var users = await db.userDao.findAllUsers();
     for(final user in users) {

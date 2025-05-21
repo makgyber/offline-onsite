@@ -7,6 +7,7 @@ import 'package:offline/config/constants.dart';
 import 'package:offline/dashboard/screens/splash.dart';
 import 'package:offline/job_orders/screens/job_order_details.dart';
 import 'package:offline/job_orders/screens/job_orders.dart';
+import 'package:offline/db/database_helper.dart';
 import 'dart:io';
 
 
@@ -28,6 +29,7 @@ class MyHttpOverrides extends HttpOverrides {
 }
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await DatabaseHelper.instance.initializeDatabase();
   HttpOverrides.global = MyHttpOverrides();
   runApp(ProviderScope(child: OfflineApp()));
 }
@@ -71,7 +73,6 @@ class OfflineApp extends ConsumerWidget {
           debugLogDiagnostics: true,
           refreshListenable: _auth,
           redirect: (BuildContext context, GoRouterState state) {
-            // ref.watch(authUserProvider);
             final bool signedIn =  _auth.isLoggedIn;
             final bool signingIn = state.matchedLocation == '/login';
 
