@@ -14,6 +14,7 @@ class AuthService extends ChangeNotifier {
 
   AuthService() {
     _init();
+    notifyListeners();
   }
 
   bool _isLoggedIn = false;
@@ -32,6 +33,7 @@ class AuthService extends ChangeNotifier {
   Future<void> _init() async {
     User user = await getAuthenticatedUser();
     _isLoggedIn = (user.token.isNotEmpty);
+
   }
 
   Future<bool> logIn(String email, String password) async {
@@ -52,12 +54,13 @@ class AuthService extends ChangeNotifier {
       return false;
     }
 
-    await db.userDao.insertUser(User(id: user.id, name: user.name, email: user.email, token: token));
+    var userId = await db.userDao.insertUser(User(id: user.id, name: user.name, email: user.email, token: token));
 
-    db.close();
-    _isLoggedIn = true;
+
+    _isLoggedIn = userId > 0;
+
     notifyListeners();
-    return true;
+    return _isLoggedIn;
   }
 
   Future<void> logOut() async {
@@ -78,3 +81,18 @@ class AuthService extends ChangeNotifier {
 final authServiceProvider = Provider<AuthService>((ref) => AuthService());
 
 final authUserProvider = Provider<Future<User>>((ref) => ref.watch(authServiceProvider).getAuthenticatedUser());
+
+/// An inherited notifier to host [UserAuth] for the subtree.
+class UserAuthScope extends InheritedNotifier<AuthService> {
+  /// Creates a [UserAuthScope].
+  const UserAuthScope({
+    required AuthService super.notifier,
+    required super.child,
+    super.key,
+  });
+
+  /// Gets the [UserAuth] above the context.
+  static AuthService of(BuildContext context) => context
+      .dependOnInheritedWidgetOfExactType<UserAuthScope>()!
+      .notifier!;
+}

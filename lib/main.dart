@@ -41,11 +41,13 @@ class OfflineApp extends ConsumerWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final _auth = AuthService();
-    return MaterialApp.router(
+    final _auth = ref.watch(authServiceProvider);
+    return UserAuthScope(
+      notifier: _auth,
+      child: MaterialApp.router(
       debugShowCheckedModeBanner: false,
       routerConfig: GoRouter(
-        initialLocation: "/splash",
+        initialLocation: "/",
           routes: <GoRoute>[
             GoRoute(
               name: 'jobOrders',
@@ -56,11 +58,6 @@ class OfflineApp extends ConsumerWidget {
                 name: 'jobOrder',
                 path: '/jobOrder/:id',
                 builder: (BuildContext context, GoRouterState state) => JobOrderDetailsScreen(id: state.pathParameters['id'])
-            ),
-            GoRoute(
-              name: 'splash',
-              builder: (context, state) => const SplashScreen(),
-              path: '/splash',
             ),
             GoRoute(
               name: 'login',
@@ -87,8 +84,10 @@ class OfflineApp extends ConsumerWidget {
             }
 
             return '/';
+
           }
       ),
+    )
     );
 
 
