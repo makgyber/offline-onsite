@@ -1,9 +1,7 @@
-import 'dart:isolate';
-
-import 'package:floor/floor.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:intl/intl.dart';
 import 'package:offline/config/constants.dart';
 import 'dart:convert';
 import 'package:offline/db/database.dart';
@@ -16,7 +14,7 @@ class JobOrderApi {
   Stream<List<JobOrder>> getJobOrdersAsStream(String visitDate) async* {
     final db = DatabaseHelper.instance.database;
 
-    final List<JobOrder>? jobOrders = await db.jobOrderDao.findAllJobOrdersByTargetDate(visitDate);
+    final List<JobOrder>? jobOrders = await db.jobOrderDao.findAllJobOrdersByTargetDate('$visitDate%');
 
     debugPrint('trying local');
     // Returns the database result if it exists
@@ -25,6 +23,7 @@ class JobOrderApi {
       debugPrint(jobOrders.length.toString());
       yield jobOrders;
     }
+
     debugPrint('exiting local');
     // Fetch the job orders from the API
     try {
@@ -57,41 +56,28 @@ class JobOrderApi {
     try {
       if (response.statusCode == 200 || response.statusCode == 400) {
         final result = jsonDecode(response.body);
-        return Isolate.run(()=>processResponse(result, db));
+        List<JobOrder> jos = [];
+        for(final jo in result) {
+          final tmp = JobOrder.fromJson(jo);
+          var jobId = await db.jobOrderDao.insertJobOrder(tmp);
+          for (final arrival in jo['arrivals']) {
+            var tArr = Arrival.fromJson(arrival);
+            var aid = await db.arrivalDao.insertArrival(tArr);
+          }
+          jos.add(tmp);
+        }
+        return jos;
       }
     }catch(e) {
       debugPrint("Error");
-      print(e.toString());
       return null;
     }
     return null;
   }
 
-  List<JobOrder> processResponse(result, OfflineDatabase db) {
-    List<JobOrder> jos = [];
-    for(final jo in result) {
-      final tmp = JobOrder.fromJson(jo);
-      db.jobOrderDao.insertJobOrder(tmp);
-      for (final arrival in jo['arrivals']) {
-        debugPrint(arrival.toString());
-        var tArr = Arrival.fromJson(arrival);
-        var aid = db.arrivalDao.insertArrival(tArr);
-      }
-      jos.add(tmp);
-    }
-
-    return jos;
-  }
-
-
   Future<JobOrder?> fetchJobOrderById(int id) async {
-    final db = await $FloorOfflineDatabase
-        .databaseBuilder(Constants.databaseName)
-        .build();
-
+    final db = DatabaseHelper.instance.database;
     final jo = await db.jobOrderDao.findJobOrderById(id);
-    debugPrint("trying out the ");
-    debugPrint(jo!.clientName);
     return jo;
   }
 

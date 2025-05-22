@@ -34,13 +34,14 @@ class _JobOrdersScreenState extends ConsumerState<JobOrdersScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final jobOrders = ref.watch(allJobOrdersProvider(DateFormat.yMd().format(visitDate!)));
+    DateFormat formatter = DateFormat('yyyy-MM-dd');
+    final jobOrders = ref.watch(allJobOrdersProvider(formatter.format(visitDate!)));
     final _auth = ref.watch(authServiceProvider);
 
     return Scaffold(
       appBar: AppBar(
         title: Text(visitDate != null
-            ? 'Job orders from ${visitDate!.year}/${visitDate!.month}/${visitDate!.day}'
+            ? 'Job orders from ${formatter.format(visitDate!)}'
             : 'Job orders today',),
         elevation: 2,
         foregroundColor: Colors.white,

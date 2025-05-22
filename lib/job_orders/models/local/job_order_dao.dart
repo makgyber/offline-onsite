@@ -9,7 +9,7 @@ abstract class JobOrderDao {
   @Query('SELECT * FROM job_orders')
   Future<List<JobOrder>> findAllJobOrders();
 
-  @Query('SELECT * FROM job_orders where targetDate=DATE(:visitDate)')
+  @Query('SELECT * FROM job_orders WHERE targetDate LIKE :visitDate')
   Future<List<JobOrder>> findAllJobOrdersByTargetDate(String visitDate);
 
   @Query('SELECT * FROM job_orders')
@@ -21,7 +21,7 @@ abstract class JobOrderDao {
   @Query('SELECT * FROM job_orders WHERE status = :status')
   Stream<List<JobOrder>> findAllJobOrdersByStatusAsStream(String status);
 
-  @Query('SELECT * FROM job_orders WHERE targetDate = DATE(:targetDate)')
+  @Query('SELECT * FROM job_orders WHERE substring(targetDate, 1, 10) = :targetDate')
   Stream<List<JobOrder>> findAllJobOrdersByTargetDateAsStream(String targetDate);
 
   @Query('UPDATE OR ABORT job_orders SET type = :type WHERE id = :id')

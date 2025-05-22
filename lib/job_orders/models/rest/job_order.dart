@@ -11,7 +11,7 @@ class JobOrder {
   final String code;
   final String summary;
   @JsonKey(name: "target_date")
-  final DateTime targetDate;
+  final String targetDate;
   @JsonKey(name: "client_name")
   final String clientName;
   @JsonKey(name: "short_address")

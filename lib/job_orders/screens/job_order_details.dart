@@ -53,7 +53,7 @@ class _JobOrderDetailsScreenState extends ConsumerState<JobOrderDetailsScreen> {
                               Text(data.jobOrderType),
                               Text(data.status),
                               Text(data.summary),
-                              Text(data.targetDate.toIso8601String()),
+                              Text(data.targetDate),
                             ],
                         );
                     },
